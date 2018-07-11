@@ -11,38 +11,43 @@ import csv
 from datetime import datetime
 from collections import defaultdict, Counter, OrderedDict
 
+Date_Input = sys.argv[1]
+fromDate = ""
+toDate = ""
 
-# Get/Validate User Input and Save in FROM_TO_DATE
-while True:
-    fromDate = input("Please enter the start date[YYYY-MM-DD]: ")
-    try:
-        datetime.strptime(fromDate, '%Y-%m-%d')
-    except ValueError:
-        print("Incorrect data format, try again!")
-    else:
-        # Don't accept if year is before creation of Github
-        if int(datetime.strptime(fromDate, '%Y-%m-%d').date().strftime('%Y')) < 2008:
-            print("That was before GitHub was created, try again!")
-        # Don't accept if date given is in the future
-        elif datetime.strptime(fromDate, '%Y-%m-%d').date().strftime('%Y-%m-%d') > datetime.now().strftime('%Y-%m-%d'):
-            print("That date is in the future, try again!")
-        else:
-            break
-while True:
-    toDate = input("Please enter the end date[YYYY-MM-DD]: ")
-    try:
-        datetime.strptime(toDate, '%Y-%m-%d')
-    except ValueError:
-        print("Incorrect data format, try again!")
-    else:
-        # Don't accept if date is before fromDate
-        if datetime.strptime(toDate, '%Y-%m-%d').date().strftime('%Y-%m-%d') < datetime.strptime(fromDate, '%Y-%m-%d').date().strftime('%Y-%m-%d'):
-            print("That date is before the start date, try again!")
-        # Don't accept if date given is in the future
-        elif datetime.strptime(toDate, '%Y-%m-%d').date().strftime('%Y-%m-%d') > datetime.now().strftime('%Y-%m-%d'):
-            print("That date is in the future, try again!")
-        else:
-            break
+# If it contains ".."
+    # Seperate the two elements and make sure they are valid
+    # Initialize as fromDate and toDate
+# If it contains "date.."
+    # Pull from that date to current date
+    # Initialize fromDate
+# If it contains "..date"
+    # Pull up until given date
+    # Initialize toDate
+try:
+    datetime.strptime(fromDate, '%Y-%m-%d')
+except ValueError:
+    print("Incorrect data format, try again!")
+else:
+    # Don't accept if year is before creation of Github
+    if int(datetime.strptime(fromDate, '%Y-%m-%d').date().strftime('%Y')) < 2008:
+        print("That was before GitHub was created, try again!")
+    # Don't accept if date given is in the future
+    elif datetime.strptime(fromDate, '%Y-%m-%d').date().strftime('%Y-%m-%d') > datetime.now().strftime('%Y-%m-%d'):
+        print("That date is in the future, try again!")
+
+try:
+    datetime.strptime(toDate, '%Y-%m-%d')
+except ValueError:
+    print("Incorrect data format, try again!")
+else:
+    # Don't accept if date is before fromDate
+    if datetime.strptime(toDate, '%Y-%m-%d').date().strftime('%Y-%m-%d') < datetime.strptime(fromDate, '%Y-%m-%d').date().strftime('%Y-%m-%d'):
+        print("That date is before the start date, try again!")
+    # Don't accept if date given is in the future
+    elif datetime.strptime(toDate, '%Y-%m-%d').date().strftime('%Y-%m-%d') > datetime.now().strftime('%Y-%m-%d'):
+        print("That date is in the future, try again!")
+
 # Format global variable FROM_TO_DATE using fromDate and toDate so that Github API reads it as a span between the dates
 FROM_TO_DATE = "{}..{}".format(fromDate, toDate)
 # Pulls token from saved env variable "GIT_API_KEY"
@@ -50,8 +55,7 @@ try:
     TOKEN = os.environ['GIT_API_KEY']
 # If there is no local var saved, allow the user to enter it manually
 except KeyError:
-    print("You do not have a local env variable named GIT_API_KEY saved.")
-    TOKEN = input("You can enter your Git token manually if you'd like: ")
+    TOKEN = sys.argv[2]
 
 
 # Is given fromDate,toDate, GitHub page #, and Global TOKEN variable

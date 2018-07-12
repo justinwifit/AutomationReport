@@ -11,23 +11,22 @@ import csv
 from datetime import datetime
 from collections import defaultdict, Counter, OrderedDict
 
-Date_Input= sys.argv[1]
+DATE_INPUT = sys.argv[1]
 twoDatesGiven = False
 
-if ".." in Date_Input:
-    split = Date_Input.split("..")
+if ".." in DATE_INPUT:
+    split = DATE_INPUT.split("..")
     fromDate = split[0]
     toDate = split[1]
     twoDatesGiven = True
-elif "<=" in Date_Input:
-    singleDate = Date_Input.replace("<=","")
-elif ">=" in Date_Input:
-    singleDate = Date_Input.replace(">=","")
+elif "<=" in DATE_INPUT:
+    singleDate = DATE_INPUT.replace("<=", "")
+elif ">=" in DATE_INPUT:
+    singleDate = DATE_INPUT.replace(">=", "")
 else:
     print("Must include [..][<=] or [>=]")
     quit()
 
-# Check dates to make sure they're valid
 try:
     if twoDatesGiven:
         datetime.strptime(fromDate, '%Y-%m-%d')
@@ -38,24 +37,18 @@ except ValueError:
     print("Incorrect data format, try again!")
     quit()
 
-# Pulls token from saved env variable "GIT_API_KEY"
 try:
     TOKEN = os.environ['GIT_API_KEY']
-# If there is no local var saved, allow the user to enter it manually
 except KeyError:
     TOKEN = sys.argv[2]
 
 
-# Is given fromDate,toDate, GitHub page #, and Global TOKEN variable
-#Makes a GET request to GitHub and saves to Json file named with page #
 def gitToJson(fromToDate, pageNumber, token):
     r = requests.get("https://github.ifit-dev.com/api/v3/search/issues?page="+str(pageNumber) +
                      "&per_page=100&sort=created&order=asc&q=repo:Sparky/SparkyMasterlib+is:issue+created:" + fromToDate, headers={'Authorization': 'token ' + token})
     with open("data"+str(pageNumber)+".json", "w") as json_file:
         json.dump(r.json(), json_file)
         print("Writing " + str(json_file.name))
-
-# Is given a jsonFile(must be first page) and calculates how many pages are required via total issue count
 
 
 def pageCalc(jsonFile):
@@ -64,60 +57,45 @@ def pageCalc(jsonFile):
         numPages = math.ceil((jsonObj["total_count"] / 100.0))
         return int(numPages)
 
-# Converts jsonFile to CSV and pulls idNumber+title+startDate+startTime+upDate+upTime+endDate+endTime+label
-
 
 def jsonToCsv(jsonFile):
     print("Converting " + str(jsonFile) + " -> CSV")
     with open(jsonFile) as f:
         jsonObj = json.load(f)
-    csvFileName = 'issues['+Date_Input + "].csv"
+    csvFileName = 'issues['+DATE_INPUT + "].csv"
 
-    # Open CSV File to write data
     with open(csvFileName, "a+") as csvFile:
-        # Instantiate csv writer
         writer = csv.writer(csvFile, escapechar="E", quoting=csv.QUOTE_NONE)
-        # Create an array of issues
         issues = []
         # Character that seperates data
         seperate = "|"
-        # Iterates through all issues in the 'items' of the Json Object
         for issue in jsonObj['items']:
-            # Pulls ID Number
             idNumber = str(issue['number']) + seperate
-            # Pulls Title
             title = str(issue['title']) + seperate
-            # Pulls Start Date and Start Time
             startDate = datetime.strptime(
                 issue["created_at"], '%Y-%m-%dT%H:%M:%SZ') .date().strftime('%m/%d/%Y')
             startTime = datetime.strptime(
                 issue["created_at"], '%Y-%m-%dT%H:%M:%SZ') .time().strftime(' %H:%M:%S') + seperate
-            # Pulls Updated Date and Time
             upDate = datetime.strptime(
                 issue["updated_at"], '%Y-%m-%dT%H:%M:%SZ') .date().strftime('%m/%d/%Y')
             upTime = datetime.strptime(
                 issue["updated_at"], '%Y-%m-%dT%H:%M:%SZ') .time().strftime(' %H:%M:%S') + seperate
 
-            # Iterates through each label list. If it finds a bug or enhancement label it breaks, if not it takes the first label
             # Label is initially set to 'None" incase labels[] is empty and the loop is never executed.
             label = "None"
             for i in range(len(issue["labels"])):
-                # If label is named "enhancement", save string as "Feature" and move on to next labels array
                 if issue["labels"][i]['name'] == "enhancement":
                     label = "Feature"
                     break
-                # If label is named "bug", save string as "Bug" and move on to next labels array
                 elif issue["labels"][i]['name'] == "bug":
                     label = "Bug"
                     break
                 # If "enhancement" and "bug" weren't found, name the string after the first label in the array
                 else:
                     label = issue["labels"][0]['name']
-            # If the issue hasn't been closed, set the endDate and endTime to "Still" + "Open"
             if(issue["closed_at"] == None):
                 endDate = "Still"
                 endTime = "Open" + seperate
-            # If the issue is closed save endDate and endTime
             else:
                 endDate = datetime.strptime(
                     issue["closed_at"], '%Y-%m-%dT%H:%M:%SZ') .date().strftime('%m/%d/%Y')
@@ -127,26 +105,18 @@ def jsonToCsv(jsonFile):
             if('pull_request' not in issue):
                 issues.append(idNumber+title+startDate+startTime +
                               upDate+upTime+endDate+endTime+label)
-        # Write to CSV file
         for key in issues:
             writer.writerow([key])
 
 
-# Pull first page from GitHub
-gitToJson(Date_Input, 1, TOKEN)
-# Calculate how many pages necessary from first page
+gitToJson(DATE_INPUT, 1, TOKEN)
 pages = pageCalc("data1.json")
-# Pull the rest of the pages and save those JSON files
 for index in range(2, pages+1):
-    gitToJson(Date_Input, index, TOKEN)
-# Iterate through all of the json files and write to one csv
+    gitToJson(DATE_INPUT, index, TOKEN)
 for index in range(1, pages+1):
-    # Convert data.json to issues.csv
     jsonToCsv("data"+str(index)+".json")
 
-# For loop that goes through each JSON file previously downloaded
 for index in range(1, pages+1):
-    # If file exists, delete it
     if os.path.isfile("data"+str(index)+".json"):
         os.remove("data"+str(index)+".json")
         print("Deleted " + "data"+str(index)+".json")

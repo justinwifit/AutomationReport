@@ -11,45 +11,33 @@ import csv
 from datetime import datetime
 from collections import defaultdict, Counter, OrderedDict
 
-Date_Input = sys.argv[1]
-fromDate = ""
-toDate = ""
+Date_Input= sys.argv[1]
+twoDatesGiven = False
 
-# If it contains ".."
-    # Seperate the two elements and make sure they are valid
-    # Initialize as fromDate and toDate
-# If it contains "date.."
-    # Pull from that date to current date
-    # Initialize fromDate
-# If it contains "..date"
-    # Pull up until given date
-    # Initialize toDate
+if ".." in Date_Input:
+    split = Date_Input.split("..")
+    fromDate = split[0]
+    toDate = split[1]
+    twoDatesGiven = True
+elif "<=" in Date_Input:
+    singleDate = Date_Input.replace("<=","")
+elif ">=" in Date_Input:
+    singleDate = Date_Input.replace(">=","")
+else:
+    print("Must include [..][<=] or [>=]")
+    quit()
+
+# Check dates to make sure they're valid
 try:
-    datetime.strptime(fromDate, '%Y-%m-%d')
+    if twoDatesGiven:
+        datetime.strptime(fromDate, '%Y-%m-%d')
+        datetime.strptime(toDate, '%Y-%m-%d')
+    else:
+        datetime.strptime(singleDate, '%Y-%m-%d')
 except ValueError:
     print("Incorrect data format, try again!")
-else:
-    # Don't accept if year is before creation of Github
-    if int(datetime.strptime(fromDate, '%Y-%m-%d').date().strftime('%Y')) < 2008:
-        print("That was before GitHub was created, try again!")
-    # Don't accept if date given is in the future
-    elif datetime.strptime(fromDate, '%Y-%m-%d').date().strftime('%Y-%m-%d') > datetime.now().strftime('%Y-%m-%d'):
-        print("That date is in the future, try again!")
+    quit()
 
-try:
-    datetime.strptime(toDate, '%Y-%m-%d')
-except ValueError:
-    print("Incorrect data format, try again!")
-else:
-    # Don't accept if date is before fromDate
-    if datetime.strptime(toDate, '%Y-%m-%d').date().strftime('%Y-%m-%d') < datetime.strptime(fromDate, '%Y-%m-%d').date().strftime('%Y-%m-%d'):
-        print("That date is before the start date, try again!")
-    # Don't accept if date given is in the future
-    elif datetime.strptime(toDate, '%Y-%m-%d').date().strftime('%Y-%m-%d') > datetime.now().strftime('%Y-%m-%d'):
-        print("That date is in the future, try again!")
-
-# Format global variable FROM_TO_DATE using fromDate and toDate so that Github API reads it as a span between the dates
-FROM_TO_DATE = "{}..{}".format(fromDate, toDate)
 # Pulls token from saved env variable "GIT_API_KEY"
 try:
     TOKEN = os.environ['GIT_API_KEY']
@@ -74,7 +62,7 @@ def pageCalc(jsonFile):
     with open(jsonFile) as f:
         jsonObj = json.load(f)
         numPages = math.ceil((jsonObj["total_count"] / 100.0))
-        return numPages
+        return int(numPages)
 
 # Converts jsonFile to CSV and pulls idNumber+title+startDate+startTime+upDate+upTime+endDate+endTime+label
 
@@ -83,7 +71,7 @@ def jsonToCsv(jsonFile):
     print("Converting " + str(jsonFile) + " -> CSV")
     with open(jsonFile) as f:
         jsonObj = json.load(f)
-    csvFileName = 'issues['+FROM_TO_DATE + "].csv"
+    csvFileName = 'issues['+Date_Input + "].csv"
 
     # Open CSV File to write data
     with open(csvFileName, "a+") as csvFile:
@@ -145,29 +133,23 @@ def jsonToCsv(jsonFile):
 
 
 # Pull first page from GitHub
-gitToJson(FROM_TO_DATE, 1, TOKEN)
+gitToJson(Date_Input, 1, TOKEN)
 # Calculate how many pages necessary from first page
 pages = pageCalc("data1.json")
 # Pull the rest of the pages and save those JSON files
 for index in range(2, pages+1):
-    gitToJson(FROM_TO_DATE, index, TOKEN)
+    gitToJson(Date_Input, index, TOKEN)
 # Iterate through all of the json files and write to one csv
 for index in range(1, pages+1):
     # Convert data.json to issues.csv
     jsonToCsv("data"+str(index)+".json")
 
-# Ask user if they'd like to delete json files
-deleteResponse = input(
-    "Finished! Would You Like To Delete Those Pesky Json Files?[Y][N]: ")
-if deleteResponse == "Y" or deleteResponse == "y":
-    # For loop that goes through each JSON file previously downloaded
-    for index in range(1, pages+1):
-        # If file exists, delete it
-        if os.path.isfile("data"+str(index)+".json"):
-            os.remove("data"+str(index)+".json")
-            print("Deleted " + "data"+str(index)+".json")
-        else:  # Show an error ##
-            print("Error: file not found")
-    print("Goodbye!")
-else:
-    print("Suit yourself, goodbye!")
+# For loop that goes through each JSON file previously downloaded
+for index in range(1, pages+1):
+    # If file exists, delete it
+    if os.path.isfile("data"+str(index)+".json"):
+        os.remove("data"+str(index)+".json")
+        print("Deleted " + "data"+str(index)+".json")
+    else:  # Show an error ##
+        print("Error: file not found")
+print("Goodbye!")

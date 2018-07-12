@@ -13,6 +13,7 @@ from collections import defaultdict, Counter, OrderedDict
 
 DATE_INPUT = sys.argv[1]
 twoDatesGiven = False
+CSV_HEADER = "Number|Title|Start|End|Type"
 
 if ".." in DATE_INPUT:
     split = DATE_INPUT.split("..")
@@ -65,7 +66,7 @@ def jsonToCsv(jsonFile):
     csvFileName = 'issues['+DATE_INPUT + "].csv"
 
     with open(csvFileName, "a+") as csvFile:
-        writer = csv.writer(csvFile, escapechar="E", quoting=csv.QUOTE_NONE)
+        writer = csv.writer(csvFile, escapechar=",", quoting=csv.QUOTE_NONE)
         issues = []
         # Character that seperates data
         seperate = "|"
@@ -105,6 +106,9 @@ def jsonToCsv(jsonFile):
             if('pull_request' not in issue):
                 issues.append(idNumber+title+startDate+startTime +
                               upDate+upTime+endDate+endTime+label)
+        # If the CSV file is empty, write a header
+        if os.stat(csvFileName).st_size == 0:
+            writer.writerow([CSV_HEADER])
         for key in issues:
             writer.writerow([key])
 

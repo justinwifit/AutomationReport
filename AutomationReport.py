@@ -41,7 +41,12 @@ except ValueError:
 try:
     TOKEN = os.environ['GIT_API_KEY']
 except KeyError:
-    TOKEN = sys.argv[2]
+    try:
+        TOKEN = sys.argv[2]
+    except IndexError:
+        print("Could not find local env variable and no token was given. Try again!")
+        quit()
+
 
 
 def gitToJson(fromToDate, pageNumber, token):

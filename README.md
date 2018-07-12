@@ -5,16 +5,16 @@ This script pulls issues from iFit Github and converts them to a CSV file
 - Python 2.7+
 - Requests python library
 
-# Acceptable Date Inputs
+# Usage
+- python AutomationReport.py "Date" "Token"(if local env variable isn't saved)
 - From->To: "YYYY-MM-DD..YYYY-MM-DD"
 - Greater Than: ">=YYYY-MM-DD"
 - Less Than: "<=YYYY-MM-DD"
+- Example: python AutomationReport.py "2016-01-01..2017-01-01" "a3jfdkh3jhfaksdkj"
+- Example(with local env variable already saved): python AutomationReport.py ">=2016-01-01"
 
 # Token
 You may save a local env variable named "GIT_API_KEY" to automatically pull your Git token.
-
-# Implementation
-python AutomationReport.py "Date" "Token"(if local env variable isn't saved)
 
 # Errors
 - This script only catches date formatting errors

@@ -2,8 +2,8 @@
 This script pulls issues from iFit Github and converts them to a CSV file
 
 # Prerequisites
-Python 3+
-Requests python library
+- Python 2.7+
+- Requests python library
 
 # Acceptable Date Inputs
 - From->To: "YYYY-MM-DD..YYYY-MM-DD"
